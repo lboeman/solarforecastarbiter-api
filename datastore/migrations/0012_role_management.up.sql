@@ -2,6 +2,7 @@ CREATE USER 'insert_rbac'@'localhost' IDENTIFIED WITH caching_sha2_password as '
 
 -- maybe other users should have create permissions?
 CREATE DEFINER = 'insert_rbac'@'localhost' PROCEDURE create_user (
+   IN user_auth0id VARCHAR(32),
    IN strid CHAR(36),
    IN auth0id VARCHAR(32),
    IN organization_name VARCHAR(32))

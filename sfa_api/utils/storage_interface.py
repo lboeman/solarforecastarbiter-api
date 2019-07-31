@@ -1,3 +1,4 @@
+import pdb
 """This file contains method stubs to act as the interface for
 storage interactions in the Solar Forecast Arbiter. The 'sfa_api.demo'
 module is a static implementation intended for developing against when
@@ -844,6 +845,18 @@ def list_users():
     for user in users:
         user['roles'] = json.loads(user['roles'])
     return users
+
+
+def store_user(user_info):
+    """
+    """
+    userid = generate_uuid()
+    _call_procedure(
+        'create_user',
+        userid,
+        user_info['sub'],
+        'public')
+
 
 
 def read_user(user_id):

@@ -1,3 +1,4 @@
+import pdb
 """
 Verify JSON Web Tokens from the configured Auth0 application.
 We use a custom solution here instead of a library like
@@ -6,6 +7,7 @@ and not issue any. We use python-jose instead of pyjwt because
 it is better documented and is not missing any JWT features.
 """
 from functools import wraps
+import requests
 
 
 from flask import (request, Response, current_app, render_template,
@@ -46,7 +48,34 @@ def verify_access_token():
         _request_ctx_stack.top.jwt_claims = token
         _request_ctx_stack.top.access_token = auth[1]
         _request_ctx_stack.top.user = token['sub']
+        create_user()
         return True
+
+
+def request_user_info():
+    info_request = requests.get(
+        current_app.config['AUTH0_BASE_URL'] + '/userinfo',
+        headers={
+            'Authorization': f'Bearer {current_access_token}',
+        })
+    user_info = info_request.json()
+    return user_info
+
+
+def create_user():
+    """Stores a user in the database.
+
+    Raises BadAPIRequest
+        If the users email is not verified.
+    """
+    info = request_user_info()
+    if not info['email_verified']:
+        raise BadAPIRequest(user='Unverified user.')
+    # store in db here
+    # TODO: fix flow of imports, move this somewhere else
+    from sfa_api.utils.storage import get_storage
+    storage = get_storage()
+    storage.store_user(info)
 
 
 def requires_auth(f):
