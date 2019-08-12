@@ -758,3 +758,24 @@ def test_store_missing_values(
 def test_read_wrong_type(sql_app, user, forecast_id):
     with pytest.raises(storage_interface.StorageAuthError):
         storage_interface.read_observation(forecast_id)
+
+def test_user_exists(
+        sql_app, user, nocommit_cursor):
+    assert storage_interface.user_exists()
+
+
+def test_user_exists_dne(
+        sql_app, nocommit_cursor):
+    assert not storage_interface.user_exists()
+
+
+def test_create_new_user(
+        sql_app, nocommit_cursor, mocker):
+    patched_user_info = mocker.patch('sfa_api.utils.auth.request_user_info')
+    patched_user_info.return_value = {'email_verified': True}
+    assert not storage_interface.user_exists()
+    ctx = sql_app.test_request_context()
+    ctx.user = 'auth0|fake_id'
+    ctx.push()
+    storage_interface.create_new_user()
+    assert storage_interface.user_exists()

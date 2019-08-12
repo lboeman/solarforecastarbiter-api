@@ -235,6 +235,14 @@ def user(sql_app):
 
 
 @pytest.fixture()
+def new_user(sql_app):
+    ctx = sql_app.test_request_context()
+    ctx.user = 'auth0|fake_id'
+    ctx.push()
+    yield
+    ctx.pop()
+
+@pytest.fixture()
 def invalid_user(sql_app):
     ctx = sql_app.test_request_context()
     ctx.user = 'bad'

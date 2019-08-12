@@ -543,6 +543,14 @@ class UserPostSchema(ma.Schema):
         description="UUID of the Organization the User belongs to."
     )
 
+@spec.define_schema('MachineUserSchema')
+class MachineUserSchema(UserPostSchema):
+    user_id = ma.UUID(
+        title="User ID",
+        description="Unique UUID of the User.",
+    )
+    organization = ma.String(title='organization')
+
 
 @spec.define_schema('UserSchema')
 class UserSchema(ma.Schema):
@@ -550,7 +558,7 @@ class UserSchema(ma.Schema):
         title="User ID",
         description="Unique UUID of the User.",
     )
-    organization = ma.String(title='Organization')
+    organization = ma.String(title='organization')
     created_at = CREATED_AT
     modified_at = MODIFIED_AT
     roles = ma.Dict()
@@ -744,4 +752,13 @@ class ReportMetricsSchema(ma.Schema):
         description=("A Markdown template with rendered metrics, and a block "
                      "for inserting timeseries plots"),
         required=True
+    )
+
+
+@spec.define_schema('InviteSchema')
+class InviteSchema(ma.Schema):
+    invite_id = ma.UUID()
+    organization_id = ma.UUID()
+    name = ma.String(
+        title="Organization Name"
     )

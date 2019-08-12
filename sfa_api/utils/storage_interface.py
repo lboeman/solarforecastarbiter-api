@@ -1,4 +1,3 @@
-import pdb
 """This file contains method stubs to act as the interface for
 storage interactions in the Solar Forecast Arbiter. The 'sfa_api.demo'
 module is a static implementation intended for developing against when
@@ -847,15 +846,17 @@ def list_users():
     return users
 
 
-def store_user(user_info):
+def user_exists():
     """
     """
-    userid = generate_uuid()
-    _call_procedure(
-        'create_user',
-        userid,
-        user_info['sub'],
-        'public')
+    return len(_call_procedure('user_exists')) == 1
+
+
+def create_new_user():
+    """Creates a record for the current user in the database if
+    it does not exist.
+    """
+    _call_procedure('create_user_if_not_exists')
 
 
 
@@ -1367,3 +1368,25 @@ def store_report_status(report_id, status):
         If the user does not haveupdate permission on the report
     """
     _call_procedure('store_report_status', report_id, status)
+
+
+def get_current_user():
+    user = _call_procedure_for_single('get_current_user')
+    return user
+
+
+def invite_user_to_organization(auth0_id):
+    _call_procedure('create_invite', auth0_id)
+
+
+def list_user_invites():
+    invites = _call_procedure('list_user_invites')
+    return invites 
+
+
+def accept_invitation(invitation_id):
+    _call_procedure('accept_invite', invitation_id)
+
+
+def decline_invitation(invitation_id):
+    _call_procedure('decline_invite', invitation_id)

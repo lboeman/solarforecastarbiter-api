@@ -6,6 +6,7 @@ flask-jwt-extended because we only need to verify valid tokens
 and not issue any. We use python-jose instead of pyjwt because
 it is better documented and is not missing any JWT features.
 """
+from json.decoder import JSONDecodeError
 from functools import wraps
 import requests
 
@@ -48,11 +49,24 @@ def verify_access_token():
         _request_ctx_stack.top.jwt_claims = token
         _request_ctx_stack.top.access_token = auth[1]
         _request_ctx_stack.top.user = token['sub']
-        create_user()
-        return True
+        return validate_user_existence()
+        
 
 
 def request_user_info():
+    """Makes a user info request to check if the user exists
+    and is verified.
+
+    Returns 
+    -------
+    unser_info: dict
+        Dict of user information provided by auth0 or None on failure
+
+    Raises
+    ------
+    json.decoder.JSONDecodeError
+        If the user info request fails.
+    """
     info_request = requests.get(
         current_app.config['AUTH0_BASE_URL'] + '/userinfo',
         headers={
@@ -60,22 +74,46 @@ def request_user_info():
         })
     user_info = info_request.json()
     return user_info
+    
 
+def validate_user_existence():
+    """Ensures users exist in both auth0 and the database
 
-def create_user():
-    """Stores a user in the database.
+    Returns
+    -------
+    True
+        If the user already existed, or was created.
+    False
+        If the user does not have a verified auth0 account or If
+        the /userinfo endpoint fails. See notes for details.
 
-    Raises BadAPIRequest
+    Raises
+    ------
+    BadAPIRequest
         If the users email is not verified.
+
+    Notes
+    -----
+    Since a JWT hold it's own expiration, it is possible for a user
+    to be deleted in auth0 and still carry a valid token. In order
+    to avoid adding that use back to our database, we return false
+    if the request for user info fails.
     """
-    info = request_user_info()
-    if not info['email_verified']:
-        raise BadAPIRequest(user='Unverified user.')
-    # store in db here
-    # TODO: fix flow of imports, move this somewhere else
+    # TODO: organize imports to avoid a crash
     from sfa_api.utils.storage import get_storage
     storage = get_storage()
-    storage.store_user(info)
+    if not storage.user_exists():
+        try:
+            info = request_user_info()
+        except JSONDecodeError:
+            # TODO: log user no longer exists in auth0.
+            return False
+        else:
+            if not info.get('email_verified', False):
+                # TODO: log user unverified error
+                return False
+            storage.create_new_user()
+    return True
 
 
 def requires_auth(f):

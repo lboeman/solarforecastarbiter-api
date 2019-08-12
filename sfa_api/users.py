@@ -1,9 +1,10 @@
+import pdb
 """Currently just method stubs.
 """
 from flask import Blueprint, jsonify
 from flask.views import MethodView
 
-from sfa_api.schema import UserSchema
+from sfa_api.schema import UserSchema, MachineUserSchema
 from sfa_api.utils.storage import get_storage
 
 
@@ -146,10 +147,18 @@ class UserRolesManagementView(MethodView):
         return '', 204
 
 
+class CurrentUserView(MethodView):
+    def get(self):
+        storage = get_storage()
+        user = storage.get_current_user()
+        return jsonify(MachineUserSchema().dump(user))
+
+
 user_blp = Blueprint(
     'users', 'users', url_prefix='/users',
 )
 user_blp.add_url_rule('/', view_func=AllUsersView.as_view('all'))
+user_blp.add_url_rule('/current', view_func=CurrentUserView.as_view('current'))
 user_blp.add_url_rule('/<user_id>', view_func=UserView.as_view('single'))
 user_blp.add_url_rule(
     '/<user_id>/roles/<role_id>',
